@@ -256,24 +256,16 @@ func NewProxy(addr string, t string) Proxy {
 		p = HTTP
 	}
 
-	ip := addrPort.Addr().Unmap()
-	
-	if !ip.Is4() {
-			return 0
-	}
-	
-	var ipv4u64 uint64
-	ipv4bytes := ip.As4()
-	
-	for i := 0; i < 4; i++ {
-		ipv4u64 |= uint64(ipv4bytes[i])
-		if i < 3 {
-			ipv4u64 <<= 8
-		}
-	}
-	ip := ipv4u64 << 32
-	port := uint64(addrPort.Port()) << 16
-	return Proxy(ip + port + uint64(p))
+    ipAddr := addrPort.Addr().Unmap()
+    if !ipAddr.Is4() {
+        return 0
+    }
+
+    b := ipAddr.As4()
+    ipv4u64 := (uint64(b[0]) << 24) | (uint64(b[1]) << 16) | (uint64(b[2]) << 8) | uint64(b[3])
+    ipBits := ipv4u64 << 32
+    portBits := uint64(addrPort.Port()) << 16
+    return Proxy(ipBits + portBits + uint64(p))
 }
 
 func HttpProxy(addr string) Proxy {
