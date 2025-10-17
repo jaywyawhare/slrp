@@ -11,7 +11,7 @@ import (
     "github.com/nfx/slrp/pmux"
 )
 
-// ip:port or ip:port protocol (protocol one of http, https, socks4, socks5)
+// ip:port or ip:port protocol (protocol one of http, https, socks4, socks5) along with username and password
 func FileSource(filePath string) Source {
     clean := filepath.Clean(filePath)
     return Source{
@@ -35,9 +35,31 @@ func FileSource(filePath string) Source {
                 }
                 proto := "http"
                 addr := line
-                if sp := strings.Fields(line); len(sp) >= 2 {
-                    addr = sp[0]
-                    proto = strings.ToLower(sp[1])
+                var user, pass string
+                fields := strings.Fields(line)
+                switch len(fields) {
+                case 0:
+                    continue
+                case 1:
+                    parts := strings.Split(fields[0], ":")
+                    if len(parts) >= 4 {
+                        addr = strings.Join(parts[0:2], ":")
+                        user = parts[2]
+                        pass = parts[3]
+                    } else {
+                        addr = fields[0]
+                    }
+                default:
+                    proto = strings.ToLower(fields[len(fields)-1])
+                    left := strings.Join(fields[:len(fields)-1], " ")
+                    parts := strings.Split(left, ":")
+                    if len(parts) >= 4 {
+                        addr = strings.Join(parts[0:2], ":")
+                        user = parts[2]
+                        pass = parts[3]
+                    } else {
+                        addr = left
+                    }
                 }
                 allowed := map[string]struct{}{"http": {}, "https": {}, "socks4": {}, "socks5": {}}
                 if _, ok := allowed[proto]; !ok {
@@ -45,6 +67,9 @@ func FileSource(filePath string) Source {
                 }
                 p := pmux.NewProxy(addr, proto)
                 if p != 0 {
+                    if user != "" || pass != "" {
+                        pmux.SetProxyAuth(p, user, pass)
+                    }
                     out = append(out, p)
                 }
             }

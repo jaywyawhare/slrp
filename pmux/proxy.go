@@ -92,11 +92,21 @@ func (p Proxy) Scheme() string {
 	return reverseProtoMap[p.Proto()]
 }
 
+var proxyAuth = struct{ m map[Proxy]struct{ u, p string } }{m: map[Proxy]struct{ u, p string }{}}
+
+func SetProxyAuth(pxy Proxy, username, password string) {
+    proxyAuth.m[pxy] = struct{ u, p string }{u: username, p: password}
+}
+
 func (p Proxy) URL() *url.URL {
-	return &url.URL{
-		Host:   p.Address(),
-		Scheme: p.Scheme(),
-	}
+    u := &url.URL{
+        Host:   p.Address(),
+        Scheme: p.Scheme(),
+    }
+    if creds, ok := proxyAuth.m[p]; ok && (creds.u != "" || creds.p != "") {
+        u.User = url.UserPassword(creds.u, creds.p)
+    }
+    return u
 }
 
 func (p Proxy) String() string {
