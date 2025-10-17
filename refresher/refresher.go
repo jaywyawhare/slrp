@@ -106,6 +106,8 @@ type Refresher struct {
 	plan         plan
 	enabled      bool
 	maxScheduled int
+	fileOnly     bool
+	filePath     string
 }
 
 type probeContract interface {
@@ -134,7 +136,7 @@ func NewRefresher(stats *stats.Stats, pool *pool.Pool, probe probeContract) *Ref
 		plan:         plan{},
 		reqs:         make(chan req),
 		active:       map[int]*task{},
-		enabled:      true,
+        enabled:      true,
 		maxScheduled: 5,
 		sources: func() []sources.Source {
 			return sources.Sources
@@ -142,12 +144,22 @@ func NewRefresher(stats *stats.Stats, pool *pool.Pool, probe probeContract) *Ref
 		client: &http.Client{
 			Transport: pool,
 		},
+        fileOnly: true,
+        filePath: "proxy.txt",
 	}
 }
 
 func (ref *Refresher) Configure(c app.Config) error {
 	ref.enabled = c.BoolOr("enabled", true)
 	ref.maxScheduled = c.IntOr("max_scheduled", 5)
+    ref.fileOnly = c.BoolOr("file_only", true)
+    ref.filePath = c.StrOr("file_path", "proxy.txt")
+    if ref.fileOnly {
+        path := ref.filePath
+        ref.sources = func() []sources.Source {
+            return []sources.Source{sources.FileSource(path)}
+        }
+    }
 	return nil
 }
 
