@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"net"
 	"net/http"
 	"regexp"
 	"strings"
@@ -22,10 +21,6 @@ import (
 
 type Checker interface {
 	Check(ctx context.Context, proxy pmux.Proxy) (time.Duration, error)
-}
-
-type dialer interface {
-	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
 type httpClient interface {
@@ -54,15 +49,11 @@ var (
 	ErrNotAnonymous    = fmt.Errorf("this IP address found")
 )
 
-func NewChecker(dialer dialer) Checker {
+func NewChecker() Checker {
 	return &configurableChecker{
 		client: &http.Client{
 			Timeout: 5 * time.Second,
-			Transport: &http.Transport{
-				DialContext:     dialer.DialContext,
-				TLSClientConfig: pmux.DefaultTlsConfig,
-				Proxy:           pmux.ProxyFromContext,
-			},
+            Transport: pmux.ContextualHttpTransport(),
 		},
 	}
 }
