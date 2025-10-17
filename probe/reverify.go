@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nfx/slrp/ipinfo"
 	"github.com/nfx/slrp/pmux"
 	"github.com/nfx/slrp/sources"
 )
@@ -15,16 +14,10 @@ type probeSnapshot interface {
 }
 
 type reverifyDashboard struct {
-	Probe  probeSnapshot
-	Lookup ipinfo.IpInfoGetter
+    Probe  probeSnapshot
 }
 
-func NewReverifyApi(probe *Probe, info *ipinfo.Lookup) *reverifyDashboard {
-	return &reverifyDashboard{
-		Probe:  probe,
-		Lookup: info,
-	}
-}
+func NewReverifyApi(probe *Probe) *reverifyDashboard { return &reverifyDashboard{ Probe: probe } }
 
 //go:generate go run ../ql/generator/main.go inReverify
 type inReverify struct {
@@ -41,7 +34,6 @@ type inReverify struct {
 func (d *reverifyDashboard) snapshot() (found inReverifyDataset) {
 	s := d.Probe.Snapshot()
 	for _, v := range s.LastReverified {
-		info := d.Lookup.Get(v.Proxy)
 		srcs := []string{}
 		for src := range s.SeenSources[v.Proxy] {
 			srcs = append(srcs, sources.ByID(src).Name())
@@ -50,9 +42,9 @@ func (d *reverifyDashboard) snapshot() (found inReverifyDataset) {
 			Proxy:    v.Proxy,
 			Attempt:  v.Attempt,
 			After:    time.Unix(v.After, 0),
-			Country:  info.Country,
-			Provider: info.Provider,
-			ASN:      info.ASN,
+            Country:  "",
+            Provider: "",
+            ASN:      0,
 			Sources:  srcs,
 		})
 	}

@@ -15,16 +15,13 @@ import (
 	"github.com/nfx/slrp/app"
 	"github.com/nfx/slrp/history"
 	"github.com/nfx/slrp/internal/qa"
-	"github.com/nfx/slrp/ipinfo"
 	"github.com/nfx/slrp/pmux"
 	"github.com/nfx/slrp/ql/eval"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSimpleAddAndRemove(t *testing.T) {
-	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory()))
 	defer runtime.Stop()
 
 	ctx := context.Background()
@@ -38,9 +35,7 @@ func TestSimpleAddAndRemove(t *testing.T) {
 
 func TestMarshallAndUnmarshall(t *testing.T) {
 	history := history.NewHistory()
-	pool, first := app.MockStartSpin(NewPool(history, ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, first := app.MockStartSpin(NewPool(history))
 	defer first.Stop()
 
 	ctx := context.Background()
@@ -51,9 +46,7 @@ func TestMarshallAndUnmarshall(t *testing.T) {
 	raw, err := pool.MarshalBinary()
 	assert.NoError(t, err)
 
-	loaded := NewPool(history, ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{})
+	loaded := NewPool(history)
 	err = loaded.UnmarshalBinary(raw)
 	assert.NoError(t, err)
 
@@ -74,9 +67,7 @@ func (r staticResponseClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 func TestRoundTrip(t *testing.T) {
-	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory()))
 	defer runtime.Stop()
 
 	pool.client = staticResponseClient{
@@ -104,9 +95,7 @@ func TestSession(t *testing.T) {
 	proxy := pmux.Socks4Proxy("127.0.0.1:1")
 
 	hist := history.NewHistory()
-	pool, runtime := app.MockStartSpin(NewPool(hist, ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}), hist)
+	pool, runtime := app.MockStartSpin(NewPool(hist), hist)
 	defer runtime.Stop()
 
 	ctx := context.Background()
@@ -133,9 +122,7 @@ func TestSession(t *testing.T) {
 }
 
 func TestHttpGet(t *testing.T) {
-	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory()))
 	defer runtime.Stop()
 
 	ctx := context.Background()
@@ -151,7 +138,6 @@ func TestHttpGet(t *testing.T) {
 	assert.NoError(t, err)
 	stats := res.(*eval.QueryResult[ApiEntry])
 	assert.Equal(t, 1, stats.Total)
-	assert.Equal(t, "Zimbabwe", stats.Records[0].Country)
 }
 
 func load(t *testing.T) *Pool {
@@ -161,9 +147,7 @@ func load(t *testing.T) *Pool {
 		t.Fatal(err)
 	}
 	dec := gob.NewDecoder(f)
-	pool := NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{})
+	pool := NewPool(history.NewHistory())
 	dec.Decode(pool)
 	return pool
 }
@@ -213,9 +197,7 @@ func TestSelection(t *testing.T) {
 }
 
 func TestReceiveHalt(t *testing.T) {
-	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory()))
 	defer runtime.Stop()
 
 	for i := 0; i < 33; i++ {
@@ -227,9 +209,7 @@ func TestReceiveHalt(t *testing.T) {
 }
 
 func TestCounterOnHalt(t *testing.T) {
-	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory()))
 	defer runtime.Stop()
 
 	serial := <-pool.serial
@@ -251,9 +231,7 @@ func TestCounterOnHalt(t *testing.T) {
 }
 
 func TestRandomFast(t *testing.T) {
-	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory()))
 	defer runtime.Stop()
 
 	x := pmux.HttpProxy("127.0.0.1:1024")
@@ -269,9 +247,7 @@ func TestRandomFast(t *testing.T) {
 }
 
 func TestRoundTripCtxErr(t *testing.T) {
-	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory()))
 	defer runtime.Stop()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -285,9 +261,7 @@ func TestRoundTripCtxErr(t *testing.T) {
 }
 
 func TestRoundTripNilResponseFromOut(t *testing.T) {
-	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory(), ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{}))
+	pool, runtime := app.MockStartSpin(NewPool(history.NewHistory()))
 	defer runtime.Stop()
 
 	ctx, cancel := context.WithCancel(context.Background())

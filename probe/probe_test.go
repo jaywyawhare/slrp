@@ -11,7 +11,6 @@ import (
 
 	"github.com/nfx/slrp/app"
 	"github.com/nfx/slrp/history"
-	"github.com/nfx/slrp/ipinfo"
 	"github.com/nfx/slrp/pmux"
 	"github.com/nfx/slrp/pool"
 	"github.com/nfx/slrp/stats"
@@ -41,9 +40,7 @@ func TestBasicProbe(t *testing.T) {
 
 	stats := stats.NewStats()
 	history := history.NewHistory()
-	pool := pool.NewPool(history, ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{})
+    pool := pool.NewPool(history)
 	probe := NewProbe(stats, pool, checker)
 
 	runtime := app.Singletons{
@@ -85,9 +82,7 @@ func TestProbeMarshaling(t *testing.T) {
 
 	stats := stats.NewStats()
 	history := history.NewHistory()
-	pool := pool.NewPool(history, ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{})
+    pool := pool.NewPool(history)
 	probe := NewProbe(stats, pool, checker)
 
 	runtime := app.Singletons{
@@ -124,9 +119,7 @@ func TestProbeDeleting(t *testing.T) {
 
 	stats := stats.NewStats()
 	history := history.NewHistory()
-	pool := pool.NewPool(history, ipinfo.NoopIpInfo{
-		Country: "Zimbabwe",
-	}, &net.Dialer{})
+    pool := pool.NewPool(history)
 	probe := NewProbe(stats, pool, checker)
 
 	runtime := app.Singletons{

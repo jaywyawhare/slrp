@@ -13,14 +13,13 @@ import (
 
 	"github.com/nfx/slrp/app"
 	"github.com/nfx/slrp/history"
-	"github.com/nfx/slrp/ipinfo"
 	"github.com/nfx/slrp/pmux"
 
 	_ "github.com/bdandy/go-socks4"
 )
 
 type Pool struct {
-	ipLookup        ipinfo.IpInfoGetter
+    ipLookup        ipInfoProvider
 	work            chan work
 	serial          chan int
 	pressure        chan int
@@ -35,30 +34,40 @@ type Pool struct {
 	config          *monitorConfig
 }
 
+type ipInfoProvider interface {
+    Get(p pmux.Proxy) (info ipInfo)
+}
+
+type ipInfo struct {
+    Country  string
+    Provider string
+    ASN      uint16
+}
+
+type noopIpInfo struct{}
+
+func (noopIpInfo) Get(p pmux.Proxy) ipInfo { return ipInfo{} }
+
 type httpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
 type dialer interface {
-	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+    DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
-func NewPool(history *history.History, ipLookup ipinfo.IpInfoGetter, dialer dialer) *Pool {
-	return &Pool{
-		ipLookup:       ipLookup,
+func NewPool(history *history.History) *Pool {
+    return &Pool{
+        ipLookup:       noopIpInfo{},
 		serial:         make(chan int),
 		pressure:       make(chan int),
 		halt:           make(chan time.Duration),
 		minute:         time.NewTicker(1 * time.Minute),
 		eviction:       make(chan chan []pmux.Proxy),
 		workerProgress: make(chan int),
-		client: &http.Client{
-			Transport: history.Wrap(&http.Transport{
-				DialContext:     dialer.DialContext,
-				Proxy:           pmux.ProxyFromContext,
-				TLSClientConfig: pmux.DefaultTlsConfig,
-			}),
-		},
+        client: &http.Client{
+            Transport: history.Wrap(pmux.ContextualHttpTransport()),
+        },
 	}
 }
 

@@ -5,22 +5,15 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nfx/slrp/ipinfo"
 	"github.com/nfx/slrp/pmux"
 	"github.com/nfx/slrp/sources"
 )
 
 type blacklistDashboard struct {
-	probe *Probe
-	info  *ipinfo.Lookup
+    probe *Probe
 }
 
-func NewBlacklistApi(probe *Probe, info *ipinfo.Lookup) *blacklistDashboard {
-	return &blacklistDashboard{
-		probe: probe,
-		info:  info,
-	}
-}
+func NewBlacklistApi(probe *Probe) *blacklistDashboard { return &blacklistDashboard{ probe: probe } }
 
 //go:generate go run ../ql/generator/main.go blacklisted
 type blacklisted struct {
@@ -47,12 +40,11 @@ func (d *blacklistDashboard) HttpGet(r *http.Request) (interface{}, error) {
 		for src := range probe.SeenSources[proxy] {
 			srcs = append(srcs, sources.ByID(src).Name())
 		}
-		info := d.info.Get(proxy)
 		snapshot = append(snapshot, blacklisted{
 			Failure:  probe.Failures[failureIndex],
-			Country:  info.Country,
-			Provider: info.Provider,
-			ASN:      info.ASN,
+            Country:  "",
+            Provider: "",
+            ASN:      0,
 			Proxy:    proxy,
 			Sources:  srcs,
 		})

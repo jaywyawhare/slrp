@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/nfx/slrp/ipinfo"
 	"github.com/nfx/slrp/pmux"
 	"github.com/nfx/slrp/ql/eval"
 	"github.com/stretchr/testify/assert"
@@ -23,13 +22,10 @@ func (f fakeProbe) Snapshot() internal {
 }
 
 func TestReverifyAPI(t *testing.T) {
-	a := &reverifyDashboard{
-		Probe: fakeProbe{
+    a := &reverifyDashboard{
+        Probe: fakeProbe{
 			{pmux.HttpProxy("127.0.0.2:2345"), 4, 5},
 			{pmux.HttpProxy("127.0.0.3:4356"), 6, 7},
-		},
-		Lookup: ipinfo.NoopIpInfo{
-			Country: "Zimbabwe",
 		},
 	}
 	res, err := a.HttpGet(&http.Request{})
