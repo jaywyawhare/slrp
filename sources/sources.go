@@ -1,37 +1,67 @@
 package sources
 
 import (
-	"time"
+    "context"
+    "fmt"
+    "net/http"
+    "net/url"
+    "strings"
+    "time"
 )
 
-func init() {
-	Sources = append(Sources, Source{
-		ID:        9,
-		Homepage:  "http://foxtools.ru/",
-		UrlPrefix: "http://api.foxtools.ru",
-		Frequency: 12 * time.Hour,
-		Feed:      httpProxyRegexFeed("http://api.foxtools.ru/v2/Proxy.txt", "1 1"),
-	}, Source{
-		ID:        10,
-		name:      "sunny9577",
-		Homepage:  "https://github.com/sunny9577/proxy-scraper",
-		UrlPrefix: "https://sunny9577.github.io/",
-		Frequency: 3 * time.Hour,
-		Seed:      true,
-		Feed:      httpProxyRegexFeed("https://sunny9577.github.io/proxy-scraper/proxies.txt", ":"),
-	}, Source{
-		ID:        19,
-		Seed:      true,
-		name:      "anonymous-free-proxy",
-		Homepage:  "https://free-proxy-list.net/anonymous-proxy.html",
-		Frequency: 30 * time.Minute,
-		Feed:      httpProxyRegexFeed("https://free-proxy-list.net/anonymous-proxy.html", "Anonymous Proxy"),
-	}, Source{
-		ID:        21,
-		name:      "uk-proxy",
-		Seed:      true,
-		Homepage:  "https://free-proxy-list.net/uk-proxy.html",
-		Frequency: 30 * time.Minute,
-		Feed:      httpProxyRegexFeed("https://free-proxy-list.net/uk-proxy.html", "UK Proxy List"),
-	})
+type Source struct {
+    ID        int
+    name      string
+    Frequency time.Duration
+
+    // Seed sources use http.DefaultClient to retrieve data,
+    // all other sources use proxy pool to fetch pages.
+    Seed bool
+
+    Session      bool
+    Homepage     string
+    UrlPrefix    string
+    expectString string
+
+    Feed func(context.Context, *http.Client) Src
+}
+
+func (s Source) Name() string {
+    if s.name != "" {
+        return s.name
+    }
+    if s.Homepage != "" {
+        page, err := url.Parse(s.Homepage)
+        if err != nil {
+            return fmt.Sprintf("src:%d", s.ID)
+        }
+        return strings.TrimPrefix(page.Host, "www.")
+    }
+    return fmt.Sprintf("src:%d", s.ID)
+}
+
+var Sources = []Source{}
+
+func ByID(id int) Source {
+    for _, s := range Sources {
+        if s.ID != id {
+            continue
+        }
+        return s
+    }
+    return Source{
+        name: "unknown",
+    }
+}
+
+func ByName(name string) Source {
+    for _, s := range Sources {
+        if s.Name() != name {
+            continue
+        }
+        return s
+    }
+    return Source{
+        name: "unknown",
+    }
 }
